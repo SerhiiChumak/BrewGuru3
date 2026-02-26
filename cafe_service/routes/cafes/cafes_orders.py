@@ -126,3 +126,44 @@ async def checkout(
     )
     final_res = await db.execute(final_stmt)
     return final_res.scalars().one()
+
+
+@router.post(
+    "/orders/{order_id}/pay-test/",
+    response_model=OrderResponseSchema,
+    tags=["orders"],
+    summary="Mock Payment: Set order status to PAID"
+)
+async def pay_order_test(
+        order_id: int,
+        db: AsyncSession = Depends(get_db),
+        user: UserModel = Depends(get_user)
+) -> OrderResponseSchema:
+    # 1. Шукаємо замовлення
+    stmt = (
+        select(OrderModel)
+        .where(OrderModel.id == order_id, OrderModel.user_id == user.id)
+        .options(
+            selectinload(OrderModel.items),
+            selectinload(OrderModel.user),
+            selectinload(OrderModel.cafe)
+        )
+    )
+    result = await db.execute(stmt)
+    order = result.scalars().one_or_none()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.status == OrderStatusEnum.PAID:
+        raise HTTPException(status_code=400, detail="Order is already paid")
+
+    # 2. Змінюємо статус (імітуємо успішну відповідь банку)
+    order.status = OrderStatusEnum.PAID
+
+    # Тут можна було б додати логіку сповіщення кафе про нове замовлення
+
+    await db.commit()
+    await db.refresh(order)
+
+    return order
