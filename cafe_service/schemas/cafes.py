@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, time
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 from pydantic import BaseModel, Field, HttpUrl
 
-from cafe_service.database.models.cafe import ReactionTypeEnum, RatingTypeEnum
+from cafe_service.database.models.cafe import RatingTypeEnum, WeekdayEnum
 
 
 # -------------------------
@@ -45,18 +45,35 @@ class AmenityRefSchema(BaseModel):
 
 class CafeOpeningHoursReadSchema(BaseModel):
     id: int
-    weekday: int
+    weekday: WeekdayEnum
+    cafe_id: int
     open_time: time
     close_time: time
+    is_open: bool = True
     model_config = {"from_attributes": True}
 
 
 class CafeOpeningHoursCreateSchema(BaseModel):
-    weekday: int
+    weekday: WeekdayEnum
+    cafe_id: int
     open_time: time
     close_time: time
+    is_open: bool = True
     model_config = {"extra": "forbid"}
 
+
+class CafeOpeningHoursNestedSchema(BaseModel):
+    weekday: WeekdayEnum
+    open_time: time
+    close_time: time
+    is_open: bool = True
+    model_config = {"extra": "forbid"}
+
+
+class UserBriefSchema(BaseModel):
+    id: int
+    email: str
+    model_config = {"from_attributes": True}
 
 
 # -------------------------
@@ -77,9 +94,22 @@ class MenuBriefSchema(BaseModel):
     model_config = {"extra": "forbid"}
 
 
+class MenuItemBriefSchema(BaseModel):
+    id: int
+    name: str
+
+    model_config = {"extra": "forbid"}
+
+
 class MenuCreateSchema(BaseModel):
     name: str
     cafe_id: int
+    items: List[MenuItemCreateSchema] = Field(default_factory=list)
+    model_config = {"extra": "forbid"}
+
+
+class MenuCreateNestedSchema(BaseModel):
+    name: str
     items: List[MenuItemCreateSchema] = Field(default_factory=list)
     model_config = {"extra": "forbid"}
 
@@ -153,34 +183,6 @@ class ReviewUpdateResponseSchema(ReviewReadSchema):
     updated_at: datetime
 
 # -------------------------
-# Reactions
-# -------------------------
-
-
-class ReactionRequestSchema(BaseModel):
-    reaction: ReactionTypeEnum
-    model_config = {"extra": "forbid"}
-
-
-class ReactionReadSchema(BaseModel):
-    cafe_id: int
-    user_id: int
-    reaction: ReactionTypeEnum
-    created_at: datetime
-    model_config = {"from_attributes": True}
-
-
-class ReactionResponseSchema(BaseModel):
-    cafe_id: int
-    user_id: int
-    reaction: Optional[ReactionTypeEnum] = None
-    created_at: Optional[datetime] = None
-    detail: str = "Reaction added"
-
-    model_config = {"extra": "forbid"}
-
-
-# -------------------------
 # Ratings
 # -------------------------
 
@@ -206,14 +208,13 @@ class RatingResponseSchema(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-
 # -------------------------
 # Cafes
 # -------------------------
 
 class CafeBaseSchema(BaseModel):
     name: str = Field(..., max_length=100)
-    city: str = Field(..., max_length=100)
+    city: CitySchema
     address: str = Field(..., max_length=100)
     phone: str = Field(..., max_length=100)
     website: Optional[HttpUrl] = None
@@ -230,7 +231,6 @@ class CafeDetailSchema(CafeBaseSchema):
     amenities: List[AmenityReadSchema] = Field(default_factory=list)
     menus: List[MenuWithItemsReadSchema] = Field(default_factory=list)
     reviews: List[ReviewCreateResponseSchema] = Field(default_factory=list)
-    reactions: List[ReactionReadSchema] = Field(default_factory=list)
     ratings: List[RatingReadSchema] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
@@ -257,38 +257,30 @@ class CafeListResponseSchema(BaseModel):
 
 class CafeCreateSchema(BaseModel):
     name: str = Field(..., max_length=100)
-    city: str = Field(..., max_length=100)
+    city_id: int
     address: str = Field(..., max_length=100)
     phone: str = Field(..., max_length=100)
-
     website: Optional[HttpUrl] = None
     instagram: Optional[HttpUrl] = None
-
     description: str = Field(..., max_length=255)
     seats: int = Field(..., ge=0)
-
-    opening_hours: List[CafeOpeningHoursCreateSchema] = Field(default_factory=list)
-    amenities: List[AmenityRefSchema] = Field(default_factory=list)
-    menus: List[MenuRefSchema] = Field(default_factory=list)
+    opening_hours: List[CafeOpeningHoursNestedSchema] = Field(default_factory=list)
+    amenities: List[AmenityRefSchema | AmenityCreateSchema] = Field(default_factory=list)
+    menus: List[MenuRefSchema | MenuCreateNestedSchema] = Field(default_factory=list)
 
     model_config = {"extra": "forbid"}
 
 
 class CafeUpdateSchema(BaseModel):
     name: Optional[str] = Field(None, max_length=100)
-    city: Optional[str] = Field(None, max_length=100)
     address: Optional[str] = Field(None, max_length=100)
-    opening_hours: Optional[List[CafeOpeningHoursCreateSchema]] = None
     phone: Optional[str] = Field(None, max_length=100)
     website: Optional[HttpUrl] = None
     instagram: Optional[HttpUrl] = None
     description: Optional[str] = Field(None, max_length=255)
     seats: Optional[int] = Field(None, ge=0)
-    amenities: Optional[List[AmenityRefSchema]] = None
-    menus: Optional[List[MenuRefSchema]] = None
 
     model_config = {"extra": "forbid"}
-
 
 # -------------------------
 # Favourites
@@ -298,3 +290,16 @@ class FavouriteListResponseSchema(BaseModel):
     cafes: List[CafeBaseSchema] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
+
+# -------------------------
+# Query params
+# -------------------------
+
+class CafeQueryParamsSchema(BaseModel):
+    search: Optional[str] = None
+    city: Optional[str] = None
+    rating: Optional[RatingTypeEnum] = None
+    sort_by: Literal["name"] = "name"
+    sort_order: Literal["asc", "desc"] = "asc"
+
+    model_config = {"extra": "forbid"}
