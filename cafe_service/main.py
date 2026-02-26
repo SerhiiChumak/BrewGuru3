@@ -5,7 +5,8 @@ from cafe_service.routes import (
     accounts_router,
     cafes_favourites_router,
     cafes_ratings_router,
-    cafes_reviews_router
+    cafes_reviews_router,
+    cafes_orders_router
 )
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,3 +33,4 @@ app.include_router(accounts_router, prefix=f"{api_version_prefix}/accounts", tag
 app.include_router(cafes_favourites_router, prefix=f"{api_version_prefix}/favourites", tags=["favourites"])
 app.include_router(cafes_ratings_router, prefix=f"{api_version_prefix}/ratings", tags=["ratings"])
 app.include_router(cafes_reviews_router, prefix=f"{api_version_prefix}/reviews", tags=["reviews"])
+app.include_router(cafes_orders_router, prefix=f"{api_version_prefix}/orders", tags=["orders"])
