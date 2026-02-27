@@ -35,7 +35,7 @@ RUN poetry lock
 RUN poetry install --no-root --only main
 
 # Selecting a working directory
-WORKDIR /usr/cafe_service/fastapi
+WORKDIR /usr/cafe_service
 
 # Copy the source code
 COPY ./cafe_service .

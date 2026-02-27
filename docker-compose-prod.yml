@@ -42,7 +42,7 @@ services:
       - .env
     environment:
       - LOG_LEVEL=debug
-      - PYTHONPATH=/usr/cafe_service/fastapi
+      - PYTHONPATH=/usr/cafe_service
       - WATCHFILES_FORCE_POLLING=true
     ports:
       - "8000:8000"
@@ -52,7 +52,7 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - ./cafe_service:/usr/cafe_service/fastapi
+      - ./cafe_service:/usr/cafe_service
     networks:
       - cafe_network
 
@@ -64,11 +64,11 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./cafe_service:/usr/cafe_service/fastapi
+      - ./cafe_service:/usr/cafe_service
     env_file:
       - .env
     environment:
-      - PYTHONPATH=/usr/cafe_service/fastapi
+      - PYTHONPATH=/usr/cafe_service
     networks:
       - cafe_network
 
