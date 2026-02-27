@@ -90,6 +90,17 @@ class UserModel(Base):
         cascade="all, delete-orphan"
     )
 
+    cart: Mapped[Optional["CartModel"]] = relationship(
+        "CartModel",
+        back_populates="user",
+        uselist=False
+    )
+
+    orders: Mapped[list["OrderModel"]] = relationship(
+        "OrderModel",
+        back_populates="user"
+    )
+
     profile: Mapped[Optional["UserProfileModel"]] = relationship(
         "UserProfileModel",
         back_populates="user",
